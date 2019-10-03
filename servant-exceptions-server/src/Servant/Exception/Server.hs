@@ -16,7 +16,7 @@
 
 module Servant.Exception.Server
   ( Throws
-  , ToServantErr(..)
+  , ToServantError(..)
   , ServantException
   , toServantException
   , fromServantException
@@ -24,7 +24,7 @@ module Servant.Exception.Server
   , mapException
   ) where
 
-import Servant.Exception                          (ToServantErr(..), Throws, ServantException, toServantException, fromServantException, mapException)
+import Servant.Exception                          (ToServantError(..), Throws, ServantException, toServantException, fromServantException, mapException)
 
 import Control.Monad.Catch                        (Exception (..), catch)
 import Control.Monad.Error.Class                  (MonadError (..))
@@ -37,7 +37,7 @@ import Network.HTTP.Types                         (Status (..), hAccept, hConten
 import Network.Wai                                (requestHeaders)
 import Servant                                    hiding (Header)
 import Servant.API.ContentTypes                   (AllMimeRender, allMime, allMimeRender)
-import Servant.Server.Internal.RoutingApplication (Delayed (..))
+import Servant.Server.Internal.Delayed            (Delayed (..))
 
 import qualified Data.Text          as Text
 import qualified Data.Text.Encoding as Text
@@ -45,9 +45,9 @@ import qualified Data.Text.Encoding as Text
 -- * Type level annotated exception handling
 
 -- | Main @HasServer@ instance for @Throws e@. Catches exceptions of type @e@ in
--- the upstream server and encodes them using @ToServantErr@ and @MimeRender@.
+-- the upstream server and encodes them using @ToServantError@ and @MimeRender@.
 instance ( Exception e
-         , ToServantErr e
+         , ToServantError e
          , AllMimeRender ct e
          , HasServer (Verb mt st ct a) context
          ) => HasServer (Throws e :> Verb (mt :: k) (st :: Nat) (ct :: [*]) (a :: *)) context where
@@ -68,11 +68,11 @@ instance ( Exception e
       -- AllMime and AllMimeRender should prevent @Nothing@
       let contentType = fromMaybe "" $ matchAccept (allMime ct) h
           body = fromMaybe "" $ mapAccept (allMimeRender ct e) h
-      throwError ServantErr { errHTTPCode = statusCode $ status e
-                            , errReasonPhrase = Text.unpack . Text.decodeUtf8 . statusMessage $ status e
-                            , errBody = body
-                            , errHeaders = (hContentType, renderHeader $ contentType) : headers e
-                            }
+      throwError ServerError { errHTTPCode = statusCode $ status e
+                             , errReasonPhrase = Text.unpack . Text.decodeUtf8 . statusMessage $ status e
+                             , errBody = body
+                             , errHeaders = (hContentType, renderHeader $ contentType) : headers e
+                             }
 
 #if MIN_VERSION_servant_server(0,12,0)
   hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy (Verb mt st ct a))

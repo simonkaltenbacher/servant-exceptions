@@ -1,4 +1,4 @@
-resolver: lts-12.14
+resolver: nightly-2019-09-21
 packages:
 - 'servant-exceptions'
 - 'servant-exceptions-server'

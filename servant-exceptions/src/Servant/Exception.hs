@@ -14,7 +14,7 @@
 
 module Servant.Exception
   ( Throws
-  , ToServantErr(..)
+  , ToServantError(..)
   , ServantException
   , toServantException
   , fromServantException
@@ -33,7 +33,7 @@ import Servant.API.ContentTypes                   (JSON, MimeRender (..), PlainT
 
 -- * Conversion type class
 
-class (Typeable e, Show e) => ToServantErr e where
+class (Typeable e, Show e) => ToServantError e where
   status :: e -> Status
 
   message :: e -> Text
@@ -51,7 +51,7 @@ data Throws (e :: *)
 -- | A root exception type (see "Control.Exception") to provide a common
 -- rendering format via @MimeRender@ for builtin content types @JSON@ and
 -- @PlainText@.
-data ServantException = forall e. (Exception e, ToJSON e, ToServantErr e) => ServantException e
+data ServantException = forall e. (Exception e, ToJSON e, ToServantError e) => ServantException e
                       deriving (Typeable)
 
 instance Show ServantException where
@@ -70,11 +70,11 @@ instance MimeRender JSON ServantException where
 instance MimeRender PlainText ServantException where
   mimeRender ct = mimeRender ct . displayException
 
-instance ToServantErr ServantException where
+instance ToServantError ServantException where
   status (ServantException e) = status e
   message (ServantException e) = message e
 
-toServantException :: (Exception e, ToJSON e, ToServantErr e) => e -> SomeException
+toServantException :: (Exception e, ToJSON e, ToServantError e) => e -> SomeException
 toServantException = toException . ServantException
 
 fromServantException :: Exception e => SomeException -> Maybe e
